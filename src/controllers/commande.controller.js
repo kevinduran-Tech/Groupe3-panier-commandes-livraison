@@ -1,5 +1,6 @@
 const commandeService = require('../services/commande.service');
 const livraisonService = require('../services/livraison.service');
+const factureService = require('../services/facture.service');
 
 async function valider(req, res, next) {
   try {
@@ -52,4 +53,16 @@ async function mettreAJourStatut(req, res, next) {
   }
 }
 
-module.exports = { valider, obtenir, historique, annuler, mettreAJourStatut };
+// Réservé aux administrateurs/gestionnaires
+async function rembourser(req, res, next) {
+  try {
+    // Vérifie que la commande appartient bien au client avant de rembourser
+    await commandeService.obtenirCommande(req.clientId, req.params.commandeId);
+    const facture = await factureService.rembourser(req.params.commandeId);
+    res.json(facture);
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { valider, obtenir, historique, annuler, mettreAJourStatut, rembourser };

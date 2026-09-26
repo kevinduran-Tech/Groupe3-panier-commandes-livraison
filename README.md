@@ -5,7 +5,9 @@ ICT University (section francophone), dirigé par M. Guy Atangana.
 
 Voir [`docs/analyse-conception.md`](docs/analyse-conception.md) pour
 l'analyse des besoins et la conception détaillée (synchronisé avec le
-support de présentation du groupe).
+support de présentation du groupe), et
+[`docs/integration-api.md`](docs/integration-api.md) pour le guide
+d'intégration destiné aux autres groupes (endpoints, formats, dépendances).
 
 ## Stack technique
 
@@ -46,10 +48,11 @@ npm test
 
 - [x] Analyse des besoins
 - [x] Conception (modèle de données, architecture)
-- [x] Développement (panier, validation de commande, facture, transitions de statut)
-- [x] Tests (tunnel d'achat complet : 11 tests passants)
-- [ ] Contrôleurs/routes pour la livraison dédiée (statuts avancés) et remboursement
-- [ ] Documentation d'intégration finale (Swagger/OpenAPI)
+- [x] Développement (panier, validation de commande, facture, remboursement, transitions de statut)
+- [x] Tests (tunnel d'achat complet : 14 tests passants)
+- [x] Documentation d'intégration pour les autres groupes (`docs/integration-api.md`)
+- [ ] Documentation OpenAPI/Swagger (nice-to-have, non bloquant)
+- [ ] Branchement réel sur les API du Groupe 1 (auth) et du Groupe 2 (catalogue) une fois disponibles
 
 ## Intégration avec le Groupe 2 (catalogue/stock)
 

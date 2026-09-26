@@ -5,6 +5,7 @@ const { sequelize } = require('../src/models');
 const panierService = require('../src/services/panier.service');
 const commandeService = require('../src/services/commande.service');
 const livraisonService = require('../src/services/livraison.service');
+const factureService = require('../src/services/facture.service');
 
 const CLIENT_ID = 'client-test-1';
 const PRODUIT_DISPONIBLE = 'produit-demo-1'; // stock: 25
@@ -99,5 +100,27 @@ describe('Cycle de vie de la commande', () => {
     await expect(
       livraisonService.mettreAJourStatutCommande(commandeId, 'EXPEDIEE')
     ).rejects.toThrow(/Transition non autorisée/);
+  });
+
+  test('rembourse la facture une fois la commande annulée', async () => {
+    const facture = await factureService.rembourser(commandeId);
+    expect(facture.statut).toBe('REMBOURSEE');
+    expect(facture.date_remboursement).not.toBeNull();
+  });
+
+  test('refuse un second remboursement de la même facture', async () => {
+    await expect(factureService.rembourser(commandeId)).rejects.toThrow(/déjà été remboursée/);
+  });
+});
+
+describe('Remboursement', () => {
+  test('refuse le remboursement tant que la commande n\'est pas annulée', async () => {
+    const clientId = 'client-test-remboursement-refuse';
+    await panierService.ajouterProduit(clientId, PRODUIT_DISPONIBLE, 1);
+    const resultat = await commandeService.validerCommande(clientId, 'Garoua, Cameroun');
+
+    await expect(factureService.rembourser(resultat.commande.id)).rejects.toThrow(
+      /commande annulée/
+    );
   });
 });

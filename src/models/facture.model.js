@@ -27,6 +27,14 @@ const Facture = sequelize.define(
       type: DataTypes.DECIMAL(12, 2),
       allowNull: false,
     },
+    statut: {
+      type: DataTypes.ENUM('EMISE', 'REMBOURSEE'),
+      defaultValue: 'EMISE',
+    },
+    date_remboursement: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
   },
   {
     tableName: 'factures',
