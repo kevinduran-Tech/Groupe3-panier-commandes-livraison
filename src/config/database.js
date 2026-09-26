@@ -6,7 +6,7 @@ const { Sequelize } = require('sequelize');
 const isTest = process.env.NODE_ENV === 'test';
 
 const sequelize = isTest
-  ? new Sequelize('sqlite::memory:', { logging: false })
+  ? new Sequelize({ dialect: 'sqlite', storage: ':memory:', logging: false })
   : new Sequelize(
       process.env.DB_NAME || 'groupe3_panier',
       process.env.DB_USER || 'postgres',

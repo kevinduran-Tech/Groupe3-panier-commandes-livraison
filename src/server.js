@@ -1,6 +1,9 @@
 require('dotenv').config();
 const express = require('express');
 const { sequelize } = require('./models');
+const panierRoutes = require('./routes/panier.routes');
+const commandeRoutes = require('./routes/commande.routes');
+const gestionErreurs = require('./middlewares/erreurs.middleware');
 
 const app = express();
 app.use(express.json());
@@ -9,8 +12,10 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', module: 'panier-commandes-livraison' });
 });
 
-// Les routes (panier, commandes, livraison, factures) seront branchées ici
-// au fur et à mesure du développement.
+app.use('/api/panier', panierRoutes);
+app.use('/api/commandes', commandeRoutes);
+
+app.use(gestionErreurs);
 
 const PORT = process.env.PORT || 3000;
 
