@@ -1,6 +1,6 @@
-# Groupe 3 — Panier, commandes et livraison
+# Groupe 3: Panier, commandes et livraison
 
-Module « Panier, commandes et livraison » — Projet de Systèmes Numériques,
+Module « Panier, commandes et livraison » Projet de Systèmes Numériques,
 ICT University (section francophone), dirigé par M. Guy Atangana.
 
 Voir [`docs/analyse-conception.md`](docs/analyse-conception.md) pour
