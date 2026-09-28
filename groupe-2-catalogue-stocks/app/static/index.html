@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Catalogue & Stocks — Groupe 2</title>
+<style>
+  body{font-family:system-ui,sans-serif;margin:0;background:#f4f6f8;color:#1f2933}
+  header{background:#0b3d5c;color:#fff;padding:14px 20px} h1{margin:0;font-size:1.2rem}
+  main{max-width:960px;margin:16px auto;padding:0 12px}
+  .carte{background:#fff;border-radius:8px;padding:14px;margin-bottom:14px;box-shadow:0 1px 3px #0002}
+  input,select,button{padding:7px;margin:3px;border:1px solid #bbb;border-radius:5px;font:inherit}
+  button{background:#0b3d5c;color:#fff;border:0;cursor:pointer}
+  table{width:100%;border-collapse:collapse} th,td{padding:7px;text-align:left;border-bottom:1px solid #eee}
+  .critique{background:#fff3cd}.rupture{background:#f8d7da}
+  #msg{min-height:1.2em;font-weight:600}
+</style>
+</head>
+<body>
+<header><h1>Groupe 2 — Catalogue de produits et gestion des stocks</h1></header>
+<main>
+  <div class="carte">
+    <input id="q" placeholder="Rechercher un produit…">
+    <select id="cat"><option value="">Toutes les catégories</option></select>
+    <select id="dispo"><option value="">Disponibilité : toutes</option><option value="true">En stock</option><option value="false">En rupture</option></select>
+    <button id="btnRech">Rechercher</button>
+  </div>
+  <div class="carte">
+    <table><thead><tr><th>Produit</th><th>Catégorie</th><th>Prix (FCFA)</th><th>Stock</th><th>Actions admin</th></tr></thead><tbody id="corps"></tbody></table>
+    <button id="prec">◀</button><span id="pageInfo"></span><button id="suiv">▶</button>
+  </div>
+  <div class="carte">
+    <strong>Administration</strong><br>
+    <input id="cle" type="password" placeholder="Clé administrateur">
+    <input id="nom" placeholder="Nom"><input id="prix" type="number" min="0" placeholder="Prix"><input id="qte" type="number" min="0" placeholder="Quantité initiale">
+    <select id="catAjout"></select><button id="btnAjout">Ajouter un produit</button>
+    <div id="msg"></div>
+  </div>
+</main>
+<script>
+const $ = id => document.getElementById(id);
+let page = 1, pages = 1;
+const cellule = (tr, texte) => { const td = document.createElement("td"); td.textContent = texte; tr.appendChild(td); return td; };
+const entetes = () => ({ "Content-Type": "application/json", "x-admin-key": $("cle").value, "x-auteur": "interface-web" });
+const dire = t => { $("msg").textContent = t; };
+
+async function chargerCategories() {
+  const cats = await (await fetch("/api/categories")).json();
+  for (const c of cats) for (const id of ["cat", "catAjout"]) {
+    const o = document.createElement("option"); o.value = c.id; o.textContent = c.nom; $(id).appendChild(o);
+  }
+}
+async function charger() {
+  const p = new URLSearchParams({ page, par_page: 10 });
+  if ($("q").value) p.set("q", $("q").value);
+  if ($("cat").value) p.set("categorie_id", $("cat").value);
+  if ($("dispo").value) p.set("disponible", $("dispo").value);
+  const r = await (await fetch("/api/produits?" + p)).json();
+  pages = r.pages; $("pageInfo").textContent = ` page ${r.page}/${r.pages} — ${r.total} produit(s) `;
+  $("corps").replaceChildren();
+  for (const x of r.items) {
+    const tr = document.createElement("tr");
+    if (x.stock === 0) tr.className = "rupture"; else if (x.stock <= x.seuil_alerte) tr.className = "critique";
+    cellule(tr, x.nom); cellule(tr, x.categorie); cellule(tr, x.prix.toLocaleString("fr-FR")); cellule(tr, x.stock);
+    const td = document.createElement("td");
+    for (const [libelle, v] of [["Vendre 1", -1], ["+10", 10]]) {
+      const b = document.createElement("button"); b.textContent = libelle;
+      b.onclick = () => mouvement(x.id, v); td.appendChild(b);
+    }
+    tr.appendChild(td); $("corps").appendChild(tr);
+  }
+}
+async function mouvement(id, variation) {
+  const r = await fetch(`/api/stock/${id}/mouvement`, { method: "POST", headers: entetes(), body: JSON.stringify({ variation }) });
+  const d = await r.json();
+  dire(r.ok ? (d.alerte ? `⚠ Alerte : stock critique (${d.quantite})` : `Stock mis à jour : ${d.quantite}`) : d.erreur);
+  charger();
+}
+$("btnAjout").onclick = async () => {
+  const corps = { nom: $("nom").value, prix: Number($("prix").value), categorie_id: Number($("catAjout").value), quantite_initiale: Number($("qte").value || 0) };
+  const r = await fetch("/api/produits", { method: "POST", headers: entetes(), body: JSON.stringify(corps) });
+  const d = await r.json(); dire(r.ok ? "Produit ajouté" : d.erreur); charger();
+};
+$("btnRech").onclick = () => { page = 1; charger(); };
+$("prec").onclick = () => { if (page > 1) { page--; charger(); } };
+$("suiv").onclick = () => { if (page < pages) { page++; charger(); } };
+chargerCategories().then(charger);
+</script>
+</body>
+</html>

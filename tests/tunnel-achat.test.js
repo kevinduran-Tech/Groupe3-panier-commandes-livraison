@@ -124,3 +124,17 @@ describe('Remboursement', () => {
     );
   });
 });
+
+describe('Intégration Groupe 2 (catalogue/stock)', () => {
+  test('décrémente le stock du catalogue après validation de la commande', async () => {
+    const catalogueClient = require('../src/services/catalogueClient');
+    const clientId = 'client-test-decrement-stock';
+
+    const { stockDisponible: stockAvant } = await catalogueClient.getInfoProduit(PRODUIT_DISPONIBLE);
+    await panierService.ajouterProduit(clientId, PRODUIT_DISPONIBLE, 2);
+    await commandeService.validerCommande(clientId, 'Bafoussam, Cameroun');
+    const { stockDisponible: stockApres } = await catalogueClient.getInfoProduit(PRODUIT_DISPONIBLE);
+
+    expect(stockApres).toBe(stockAvant - 2);
+  });
+});

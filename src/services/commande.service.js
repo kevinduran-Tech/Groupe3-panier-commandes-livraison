@@ -96,6 +96,22 @@ async function validerCommande(clientId, adresse) {
     return { commande, facture, livraison };
   });
 
+  // La commande est déjà créée et garantie cohérente (transaction ci-dessus).
+  // On répercute maintenant la vente sur le stock du Groupe 2. Si cet appel
+  // échoue (Groupe 2 indisponible), la commande reste valide côté Groupe 3 :
+  // c'est une limite connue en l'absence de transaction distribuée entre les
+  // deux modules — à surveiller via les logs [STOCK] en attendant une file
+  // d'attente ou une compensation automatique.
+  for (const ligne of lignesValidees) {
+    try {
+      await catalogueClient.decrementerStock(ligne.produit_id, ligne.quantite);
+    } catch (err) {
+      console.error(
+        `[STOCK] Échec de la décrémentation pour le produit ${ligne.produit_id} (commande ${resultat.commande.id}) : ${err.message}`
+      );
+    }
+  }
+
   return {
     ...resultat,
     lignes: lignesValidees,

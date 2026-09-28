@@ -9,6 +9,9 @@ support de présentation du groupe), et
 [`docs/integration-api.md`](docs/integration-api.md) pour le guide
 d'intégration destiné aux autres groupes (endpoints, formats, dépendances).
 
+Le PowerPoint et le rapport Word de présentation du projet se trouvent
+dans [`livrables/`](livrables/).
+
 ## Stack technique
 
 - Node.js + Express (API REST)
@@ -49,24 +52,35 @@ npm test
 - [x] Analyse des besoins
 - [x] Conception (modèle de données, architecture)
 - [x] Développement (panier, validation de commande, facture, remboursement, transitions de statut)
-- [x] Tests (tunnel d'achat complet : 14 tests passants)
+- [x] Tests (tunnel d'achat complet : 15 tests passants, dont l'intégration Groupe 2)
 - [x] Documentation d'intégration pour les autres groupes (`docs/integration-api.md`)
 - [ ] Documentation OpenAPI/Swagger (nice-to-have, non bloquant)
-- [ ] Branchement réel sur les API du Groupe 1 (auth) et du Groupe 2 (catalogue) une fois disponibles
+- [x] Branchement réel sur l'API du Groupe 2 (catalogue) — code prêt (`CATALOG_SERVICE_MOCK=false`), à activer dès que leur serveur tourne en continu
+- [ ] Branchement réel sur l'API du Groupe 1 (authentification), en attente de leur livraison
 
 ## Intégration avec le Groupe 2 (catalogue/stock)
 
+Le code source de leur module se trouve dans
+[`groupe-2-catalogue-stocks/`](groupe-2-catalogue-stocks/) (Flask/Python,
+31 tests, voir son propre README pour l'installer et le lancer en local :
+`python run.py`, écoute sur `http://localhost:5002`).
+
 Par défaut, `src/services/catalogueClient.js` tourne en **mode simulation**
 (`CATALOG_SERVICE_MOCK=true` ou `CATALOG_SERVICE_URL` non renseignée), avec un
-petit catalogue de démonstration. Dès que l'API du Groupe 2 est prête,
-renseigner dans `.env` :
+petit catalogue de démonstration. Pour utiliser leur vraie API (une fois leur
+serveur lancé), renseigner dans `.env` :
 
 ```
-CATALOG_SERVICE_URL=http://url-du-groupe-2/api
+CATALOG_SERVICE_URL=http://localhost:5002/api
 CATALOG_SERVICE_MOCK=false
+CATALOG_ADMIN_KEY=<valeur de ADMIN_API_KEY dans leur .env>
 ```
 
-Le module Groupe 2 doit exposer `GET /produits/:id` retournant `{ prix, stock }`.
+Contrat réel exposé par le Groupe 2 (voir
+[`groupe-2-catalogue-stocks/docs/integration-api.md`](groupe-2-catalogue-stocks/docs/integration-api.md)) :
+`GET /api/produits/:id` retourne `{ prix, stock }`, et la validation de
+commande déclenche `POST /api/stock/:id/mouvement { variation }` (en-tête
+`x-admin-key` requis) pour décrémenter réellement le stock.
 
 ## Points d'API exposés
 

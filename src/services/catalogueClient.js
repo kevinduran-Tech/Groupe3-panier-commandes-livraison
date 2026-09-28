@@ -1,11 +1,14 @@
 const axios = require('axios');
 
 const CATALOG_BASE_URL = process.env.CATALOG_SERVICE_URL || '';
+const CATALOG_ADMIN_KEY = process.env.CATALOG_ADMIN_KEY || '';
 const MOCK_MODE = process.env.CATALOG_SERVICE_MOCK === 'true' || !CATALOG_BASE_URL;
 
-// Petit catalogue simulé, utilisé tant que le Groupe 2 n'expose pas encore
-// son API. A retirer une fois CATALOG_SERVICE_URL renseignée et
-// CATALOG_SERVICE_MOCK=false.
+// Petit catalogue simulé, utilisé tant que CATALOG_SERVICE_MOCK=true ou que
+// CATALOG_SERVICE_URL n'est pas renseignée. Reflète le contrat réel exposé
+// par le Groupe 2 (voir groupe-2-catalogue-stocks/docs/integration-api.md) :
+// GET /api/produits/:id -> { prix, stock } et
+// POST /api/stock/:id/mouvement { variation } -> { quantite, alerte }.
 const CATALOGUE_SIMULE = {
   'produit-demo-1': { prix: 1500, stock: 25, nom: 'Riz 5kg' },
   'produit-demo-2': { prix: 750, stock: 3, nom: 'Huile 1L' },
@@ -47,4 +50,32 @@ async function verifierDisponibilite(produitId, quantite) {
   return true;
 }
 
-module.exports = { getInfoProduit, verifierDisponibilite };
+/**
+ * Décrémente le stock d'un produit suite à une commande validée.
+ * Appelé APRÈS la création réussie de la commande (voir commande.service.js) :
+ * la vérification de disponibilité a déjà eu lieu, ceci n'est donc pas un
+ * deuxième contrôle mais l'écriture réelle du mouvement de stock côté
+ * Groupe 2. `POST /api/stock/:id/mouvement` exige l'en-tête x-admin-key
+ * (mécanisme provisoire du Groupe 2, en attendant le Groupe 1).
+ */
+async function decrementerStock(produitId, quantite) {
+  if (MOCK_MODE) {
+    const produit = CATALOGUE_SIMULE[produitId];
+    if (!produit || produit.stock < quantite) {
+      const err = new Error(`Stock insuffisant pour le produit ${produitId} (mode simulation)`);
+      err.status = 409;
+      throw err;
+    }
+    produit.stock -= quantite;
+    return { produit_id: produitId, quantite: produit.stock };
+  }
+
+  const { data } = await axios.post(
+    `${CATALOG_BASE_URL}/stock/${produitId}/mouvement`,
+    { variation: -quantite },
+    { headers: { 'x-admin-key': CATALOG_ADMIN_KEY } }
+  );
+  return data;
+}
+
+module.exports = { getInfoProduit, verifierDisponibilite, decrementerStock };
